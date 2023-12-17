@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: 001-ddl-create-servers-table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 002-ddl-create-urls-table.yaml
+      relativeToChangelogFile: true

@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Sergei Ivanov (fromiva)
+      dbms: postgresql
+      changes:
+        - createTable:
+            tableName:  servers
+            columns:
+              - column:
+                  name: server_uuid
+                  type: UUID
+                  defaultValue: GEN_RANDOM_UUID()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+  - changeSet:
+      id: 2
+      author: Sergei Ivanov (fromiva)
+      dbms: h2
+      changes:
+        - createTable:
+            tableName:  servers
+            columns:
+              - column:
+                  name: server_uuid
+                  type: UUID
+                  defaultValue: RANDOM_UUID()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+  - changeSet:
+      id: 3
+      author: Sergei Ivanov (fromiva)
+      changes:
+        - addColumn:
+            tableName: servers
+            columns:
+              - column:
+                  name: host
+                  type: VARCHAR(256)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password
+                  type: VARCHAR(256)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created
+                  type: TIMESTAMP(6) WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated
+                  type: TIMESTAMP(6) WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(256)
+                  constraints:
+                    nullable: true

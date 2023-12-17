@@ -1,0 +1,84 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Sergei Ivanov (fromiva)
+      dbms: postgresql
+      changes:
+        - createTable:
+            tableName:  urls
+            columns:
+              - column:
+                  name: url_uuid
+                  type: UUID
+                  defaultValue: GEN_RANDOM_UUID()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+  - changeSet:
+      id: 2
+      author: Sergei Ivanov (fromiva)
+      dbms: h2
+      changes:
+        - createTable:
+            tableName:  urls
+            columns:
+              - column:
+                  name: url_uuid
+                  type: UUID
+                  defaultValue: RANDOM_UUID()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+  - changeSet:
+      id: 3
+      author: Sergei Ivanov (fromiva)
+      changes:
+        - addColumn:
+            tableName: urls
+            columns:
+              - column:
+                  name: server_uuid
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: url
+                  type: VARCHAR(8192)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: created
+                  type: TIMESTAMP(6) WITH TIME ZONE
+                  value: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expired
+                  type: TIMESTAMP(6) WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: VARCHAR(256)
+                  constraints:
+                    nullable: true
+  - changeSet:
+      id: 4
+      author: Sergei Ivanov (fromiva)
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_server_uuid
+            baseTableSchemaName: public
+            baseTableName: urls
+            baseColumnNames: server_uuid
+            referencedTableSchemaName: public
+            referencedTableName: servers
+            referencedColumnNames: server_uuid
+            onDelete: CASCADE
+            onUpdate: CASCADE

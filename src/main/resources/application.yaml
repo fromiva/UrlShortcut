@@ -1,3 +1,7 @@
 spring:
+  config.name: Job4J URL Shortcut
+  profiles.default: dev
   liquibase:
-    enabled: false
+    contexts: ${spring.profiles.active}
+    change-log: classpath:/db/changelog/000-changelog-main.yaml
+  jpa.hibernate.ddl-auto: validate

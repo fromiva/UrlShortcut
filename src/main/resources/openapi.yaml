@@ -25,7 +25,7 @@ paths:
                 - password
               properties:
                 url:
-                  $ref: '#/components/schemas/Server'
+                  $ref: '#/components/schemas/Host'
                 password:
                   $ref: '#/components/schemas/Password'
       responses:
@@ -300,9 +300,9 @@ components:
       format: uuid
       description: Entity Universally Unique Identifier (UUID)
       example: 849aa33e-24f0-4a07-86b2-301699c95029
-    Server:
+    Host:
       type: string
-      description: Server domain name
+      description: Server valid host name or IP address
       maxLength: 256
       example: example.com
     Url:
@@ -344,8 +344,8 @@ components:
       properties:
         uuid:
           $ref: '#/components/schemas/Uuid'
-        url:
-          $ref: '#/components/schemas/Server'
+        host:
+          $ref: '#/components/schemas/Host'
         created:
           $ref: '#/components/schemas/Timestamp'
         updated:
@@ -384,7 +384,7 @@ components:
         - token
       properties:
         server:
-          $ref: '#/components/schemas/Server'
+          $ref: '#/components/schemas/Host'
         created:
           $ref: '#/components/schemas/Timestamp'
         expired:
