@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
+    generate-unique-name: false
+    username: sa
+    password:
+  jpa:
+    show-sql: true
+  test:
+    database:
+      replace: none
+logging:
+  level:
+    root: info
+    ru.job4j: debug

@@ -39,6 +39,18 @@
 			</properties>
 		</profile>
 		<profile>
+			<id>dev</id>
+			<properties>
+				<activeSpringProfile>dev</activeSpringProfile>
+			</properties>
+		</profile>
+		<profile>
+			<id>qa</id>
+			<properties>
+				<activeSpringProfile>qa</activeSpringProfile>
+			</properties>
+		</profile>
+		<profile>
 			<id>prod</id>
 			<properties>
 				<activeSpringProfile>prod</activeSpringProfile>
