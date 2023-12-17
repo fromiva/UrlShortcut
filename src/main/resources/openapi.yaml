@@ -1,0 +1,422 @@
+openapi: 3.0.0
+info:
+  title: Job4J URL Shortcut
+  description: Job4J URL Shortcut service
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8080/api'
+    description: Local development environment
+
+paths:
+  /servers/register:
+    post:
+      tags:
+        - Servers
+      operationId: serverRegistration
+      summary: New server registration
+      requestBody:
+        description: Parameters of the server to register
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+                - password
+              properties:
+                url:
+                  $ref: '#/components/schemas/Server'
+                password:
+                  $ref: '#/components/schemas/Password'
+      responses:
+        200:
+          description: When server registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerEntity'
+        400:
+          description: When server is not registered, due to request is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        409:
+          description: When server is already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /servers/{uuid}:
+    parameters:
+      - $ref: '#/components/parameters/Uuid'
+    get:
+      tags:
+        - Servers
+      operationId: getServerByUuid
+      summary: Get information about server
+      security:
+        - token: []
+      responses:
+        200:
+          description: Returns server info
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - server
+                  - urls
+                properties:
+                  server:
+                    $ref: '#/components/schemas/ServerEntity'
+                  urls:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UrlEntity'
+        404:
+          description: When server not found or client has no rights to access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      tags:
+        - Servers
+      operationId: changeServerPassword
+      summary: Update server security credentials (password)
+      security:
+        - token: []
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              type: object
+              required:
+                - oldPassword
+                - newPassword
+              properties:
+                oldPassword:
+                  $ref: '#/components/schemas/Password'
+                newPassword:
+                  $ref: '#/components/schemas/Password'
+      responses:
+        200:
+          description: When successful update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerEntity'
+        404:
+          description: When server not found or client has no rights to access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Servers
+      operationId: deleteServer
+      summary: Delete server and all the related URLs from the service
+      security:
+        - token: []
+      responses:
+        204:
+          description: When successful delete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerEntity'
+        404:
+          description: When server not found or client has no rights to perform the operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /urls/register:
+    post:
+      tags:
+        - URLs
+      operationId: registerURL
+      summary: Register a new URL
+      security:
+        - token: []
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  $ref: '#/components/schemas/Url'
+                expired:
+                  $ref: '#/components/schemas/Timestamp'
+                description:
+                  $ref: '#/components/schemas/Description'
+      responses:
+        200:
+          description: When URL registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlEntity'
+        400:
+          description: When URL is not registered, due to request is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        409:
+          description: When URL is already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /urls/{uuid}:
+    parameters:
+      - $ref: '#/components/parameters/Uuid'
+    get:
+      tags:
+        - URLs
+      operationId: getUrlByUuid
+      summary: Get information about URL
+      security:
+        - token: []
+      responses:
+        200:
+          description: Returns URL info
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - url
+                  - visited
+                properties:
+                  url:
+                    $ref: '#/components/schemas/UrlEntity'
+                  visited:
+                    type: integer
+                    format: int64
+                    description: How many times URL was accessed
+                    example: 10
+        404:
+          description: When URL not found or client has no rights to access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - URLs
+      operationId: deleteUrlByUuid
+      summary: Delete URL from the service
+      security:
+        - token: []
+      responses:
+        204:
+          description: When successful delete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlEntity'
+        404:
+          description: When URL not found or client has no rights to access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /redirect/{uuid}:
+    parameters:
+      - $ref: '#/components/parameters/Uuid'
+    get:
+      tags:
+        - Redirection
+      operationId: redirectUrlByUuid
+      summary: Redirect URL UUID to the actual URL
+      responses:
+        302:
+          description: Redirect to actual URL when correct UUID or redirect to error page when UUID not found or blocked
+        404:
+          description: 404 error page
+          content:
+            text/html:
+              schema:
+                description: End user HTML error page when actual URL to redirect not found or blocked
+  /login:
+    post:
+      tags:
+        - Security
+      operationId: login
+      summary: Get a JSON Web Token for secured requests
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - uuid
+                - password
+              properties:
+                uuid:
+                  $ref: '#/components/schemas/Uuid'
+                password:
+                  $ref: '#/components/schemas/Password'
+      responses:
+        200:
+          description: When server authenticated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityToken'
+        401:
+          description: When server not authenticated due to server UUID or password is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  parameters:
+    Uuid:
+      name: uuid
+      in: path
+      description: Entity Universally Unique Identifier (UUID)
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 849aa33e-24f0-4a07-86b2-301699c95029
+  securitySchemes:
+    token:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+      description: Entity Universally Unique Identifier (UUID)
+      example: 849aa33e-24f0-4a07-86b2-301699c95029
+    Server:
+      type: string
+      description: Server domain name
+      maxLength: 256
+      example: example.com
+    Url:
+      type: string
+      description: URL to register
+      maxLength: 8192
+      example: https://example.com/path
+    Password:
+      type: string
+      minLength: 8
+      maxLength: 256
+      example: password
+    Timestamp:
+      type: string
+      format: ISO 8601
+      description: Date and time represented as a string in ISO 8601 format
+      example: 2024-12-31T23:59:59
+    Status:
+      type: string
+      enum:
+        - REGISTERED
+        - VERIFIED
+        - BLOCKED
+      description: Entity status for access control
+      default: REGISTERED
+    Description:
+      type: string
+      description: Entity description
+      maxLength: 256
+      example: Some description
+    ServerEntity:
+      type: object
+      required:
+        - uuid
+        - url
+        - created
+        - status
+        - description
+      properties:
+        uuid:
+          $ref: '#/components/schemas/Uuid'
+        url:
+          $ref: '#/components/schemas/Server'
+        created:
+          $ref: '#/components/schemas/Timestamp'
+        updated:
+          $ref: '#/components/schemas/Timestamp'
+        status:
+          $ref: '#/components/schemas/Status'
+        description:
+          $ref: '#/components/schemas/Description'
+    UrlEntity:
+      type: object
+      required:
+        - uuid
+        - url
+        - created
+        - status
+        - description
+      properties:
+        uuid:
+          $ref: '#/components/schemas/Uuid'
+        url:
+          $ref: '#/components/schemas/Url'
+        created:
+          $ref: '#/components/schemas/Timestamp'
+        expired:
+          $ref: '#/components/schemas/Timestamp'
+        status:
+          $ref: '#/components/schemas/Status'
+        description:
+          $ref: '#/components/schemas/Description'
+    SecurityToken:
+      type: object
+      required:
+        - server
+        - created
+        - expired
+        - token
+      properties:
+        server:
+          $ref: '#/components/schemas/Server'
+        created:
+          $ref: '#/components/schemas/Timestamp'
+        expired:
+          $ref: '#/components/schemas/Timestamp'
+        token:
+          type: string
+          format: JWT
+          description: JSON Web Token to secure access service endpoints
+    Error:
+      type: object
+      required:
+        - timestamp
+        - status
+        - error
+        - path
+      properties:
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        status:
+          type: integer
+          format: int32
+          description: Server error HTTP response code
+          example: 404
+        error:
+          type: string
+          description: Error title
+          example: Not Found
+        message:
+          type: string
+          description: Error message / description
+          example: URL with UUID 849aa33e-24f0-4a07-86b2-301699c95029 not found
+        path:
+          type: string
+          description: URL path and query components
+          example: /urls/849aa33e-24f0-4a07-86b2-301699c95029
