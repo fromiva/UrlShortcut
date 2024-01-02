@@ -4,11 +4,11 @@ info:
   description: Job4J URL Shortcut service
   version: 1.0.0
 servers:
-  - url: 'http://localhost:8080/api'
+  - url: 'http://localhost:8080/'
     description: Local development environment
 
 paths:
-  /servers/register:
+  /api/servers/register:
     post:
       tags:
         - Servers
@@ -21,10 +21,10 @@ paths:
             schema:
               type: object
               required:
-                - url
+                - host
                 - password
               properties:
-                url:
+                host:
                   $ref: '#/components/schemas/Host'
                 password:
                   $ref: '#/components/schemas/Password'
@@ -47,7 +47,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /servers/{uuid}:
+  /api/servers/{uuid}:
     parameters:
       - $ref: '#/components/parameters/Uuid'
     get:
@@ -103,10 +103,6 @@ paths:
       responses:
         200:
           description: When successful update
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServerEntity'
         404:
           description: When server not found or client has no rights to access
           content:
@@ -123,17 +119,13 @@ paths:
       responses:
         204:
           description: When successful delete
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ServerEntity'
         404:
           description: When server not found or client has no rights to perform the operation
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /urls/register:
+  /api/urls/register:
     post:
       tags:
         - URLs
@@ -174,7 +166,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /urls/{uuid}:
+  /api/urls/{uuid}:
     parameters:
       - $ref: '#/components/parameters/Uuid'
     get:
@@ -245,7 +237,7 @@ paths:
             text/html:
               schema:
                 description: End user HTML error page when actual URL to redirect not found or blocked
-  /login:
+  /api/token:
     post:
       tags:
         - Security
@@ -337,7 +329,7 @@ components:
       type: object
       required:
         - uuid
-        - url
+        - host
         - created
         - status
         - description
@@ -378,12 +370,12 @@ components:
     SecurityToken:
       type: object
       required:
-        - server
+        - host
         - created
         - expired
         - token
       properties:
-        server:
+        host:
           $ref: '#/components/schemas/Host'
         created:
           $ref: '#/components/schemas/Timestamp'

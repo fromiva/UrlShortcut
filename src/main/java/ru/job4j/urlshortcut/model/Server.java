@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import ru.job4j.urlshortcut.util.HostName;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -18,6 +19,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -40,6 +42,7 @@ public class Server {
     private UUID uuid;
 
     /** Server host (domain) name. */
+    @HostName
     @Column(nullable = false, unique = true, updatable = false)
     private String host;
 
@@ -63,5 +66,6 @@ public class Server {
     private Status status = Status.REGISTERED;
 
     /** Server description. */
+    @Size(max = 256, message = "Description maximum length must be 256 symbols")
     private String description;
 }

@@ -4,4 +4,7 @@ spring:
   liquibase:
     contexts: ${spring.profiles.active}
     change-log: classpath:/db/changelog/000-changelog-main.yaml
-  jpa.hibernate.ddl-auto: validate
+  jpa:
+    hibernate.ddl-auto: validate
+    open-in-view: false
+server.error.include-message: always
