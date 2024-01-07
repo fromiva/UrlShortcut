@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -14,8 +15,10 @@ import ru.job4j.urlshortcut.configuration.SecurityConfiguration;
 import ru.job4j.urlshortcut.model.Server;
 import ru.job4j.urlshortcut.model.Status;
 import ru.job4j.urlshortcut.repository.ServerRepository;
+import ru.job4j.urlshortcut.util.AccessForbiddenException;
 import ru.job4j.urlshortcut.util.EntityNotFoundException;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +37,8 @@ class ServerServiceImplTest {
     private PasswordEncoder encoder;
     @MockBean
     private ServerRepository repository;
+    @Mock
+    private Principal principal;
     private ServerService serverService;
 
     private final UUID uuid = UUID.randomUUID();
@@ -77,16 +82,23 @@ class ServerServiceImplTest {
     }
 
     @Test
-    void whenGetByCorrectIdThenGetEntity() {
-        when(repository.findById(uuid)).thenReturn(Optional.of(serverWithId));
-        Server actual = serverService.getById(uuid);
+    void whenGetByCorrectIdAndHostThenGetEntity() {
+        when(repository.findByUuidAndHost(uuid, host)).thenReturn(Optional.of(serverWithId));
+        Server actual = serverService.getByIdAndHost(uuid, host);
         assertThat(actual).usingRecursiveComparison().isEqualTo(serverWithId);
     }
 
     @Test
     void whenGetByIncorrectIdThenGetException() {
-        when(repository.findById(uuid)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> serverService.getById(uuid))
+        when(repository.findByUuidAndHost(uuid, host)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> serverService.getByIdAndHost(uuid, host))
+                .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    @Test
+    void whenGetByIncorrectHostThenGetException() {
+        when(repository.findByUuidAndHost(uuid, host)).thenReturn(Optional.of(serverWithId));
+        assertThatThrownBy(() -> serverService.getByIdAndHost(uuid, "subdomain." + host))
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
@@ -94,27 +106,53 @@ class ServerServiceImplTest {
     void whenUpdatePasswordByCorrectIdThenSuccess() {
         String newPassword = "password1";
         when(repository.findById(uuid)).thenReturn(Optional.of(serverWithId));
-        when(repository.updatePasswordById(eq(uuid), any())).thenReturn(1);
-        assertThat(serverService.updatePassword(uuid, password, newPassword)).isTrue();
+        when(repository.updatePasswordByUuid(eq(uuid), any())).thenReturn(1);
+        when(principal.getName()).thenReturn(host);
+        assertThat(serverService.updatePasswordByIdAndPrincipal(uuid, principal, newPassword))
+                .isTrue();
     }
 
     @Test
     void whenUpdatePasswordByIncorrectIdThenGetException() {
         String newPassword = "password1";
-        when(repository.findById(uuid)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> serverService.updatePassword(uuid, password, newPassword))
+        when(repository.findByUuidAndHost(uuid, host)).thenReturn(Optional.empty());
+        when(principal.getName()).thenReturn(host);
+        assertThatThrownBy(() -> serverService
+                .updatePasswordByIdAndPrincipal(uuid, principal, newPassword))
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
-    void whenDeleteByCorrectIdThenSuccess() {
-        when(repository.deleteByIdAndReturnCount(uuid)).thenReturn(1);
-        assertThat(serverService.deleteById(uuid)).isTrue();
+    void whenUpdatePasswordByIncorrectHostThenGetException() {
+        String newPassword = "password1";
+        when(repository.findById(uuid)).thenReturn(Optional.of(serverWithId));
+        when(principal.getName()).thenReturn("subdomain." + host);
+        assertThatThrownBy(() -> serverService
+                .updatePasswordByIdAndPrincipal(uuid, principal, newPassword))
+                .isInstanceOf(AccessForbiddenException.class);
     }
 
     @Test
-    void whenDeleteByIncorrectIdThenGetFalse() {
-        when(repository.deleteByIdAndReturnCount(uuid)).thenReturn(0);
-        assertThat(serverService.deleteById(uuid)).isFalse();
+    void whenDeleteByCorrectIdThenSuccess() {
+        when(repository.findById(uuid)).thenReturn(Optional.of(serverWithId));
+        when(repository.deleteByUuid(uuid)).thenReturn(1);
+        when(principal.getName()).thenReturn(host);
+        assertThat(serverService.deleteByIdAndPrincipal(uuid, principal)).isTrue();
+    }
+
+    @Test
+    void whenDeleteByIncorrectIdThenGetException() {
+        when(repository.findById(uuid)).thenThrow(EntityNotFoundException.class);
+        when(principal.getName()).thenReturn(host);
+        assertThatThrownBy(() -> serverService.deleteByIdAndPrincipal(uuid, principal))
+                .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    @Test
+    void whenDeleteByIncorrectHostThenGetException() {
+        when(repository.findById(uuid)).thenReturn(Optional.of(serverWithId));
+        when(principal.getName()).thenReturn("subdomain." + host);
+        assertThatThrownBy(() -> serverService.deleteByIdAndPrincipal(uuid, principal))
+                .isInstanceOf(AccessForbiddenException.class);
     }
 }

@@ -1,9 +1,8 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
-    generate-unique-name: false
-    username: sa
-    password:
+    url: jdbc:postgresql://127.0.0.1:5432/url_shortcut
+    username: postgres
+    password: password
   h2:
     console:
       enabled: true

@@ -8,10 +8,20 @@ import org.springframework.lang.NonNull;
 import org.springframework.transaction.annotation.Transactional;
 import ru.job4j.urlshortcut.model.Server;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /** {@code Server}-specific repository interface. */
 public interface ServerRepository extends JpaRepository<Server, UUID> {
+
+    /**
+     * Retrieves {@code Server} entity from the persistent storage
+     * @param uuid ID of the server to retrieve
+     * @param host server hostname
+     * @return target entity
+     */
+    Optional<Server> findByUuidAndHost(@NonNull UUID uuid,
+                                       @NonNull String host);
 
     /**
      * Deletes {@code Server} entity from the repository and returns the result of the operation.
@@ -21,7 +31,7 @@ public interface ServerRepository extends JpaRepository<Server, UUID> {
     @Transactional
     @Modifying
     @Query("DELETE Server s WHERE s.uuid = :uuid")
-    int deleteByIdAndReturnCount(@NonNull @Param("uuid") UUID uuid);
+    int deleteByUuid(@NonNull @Param("uuid") UUID uuid);
 
     /**
      * Updates password of a {@code Server}.
@@ -32,6 +42,6 @@ public interface ServerRepository extends JpaRepository<Server, UUID> {
     @Transactional
     @Modifying
     @Query("UPDATE Server s SET s.password = :password WHERE s.uuid = :uuid")
-    int updatePasswordById(@NonNull @Param("uuid") UUID uuid,
-                           @NonNull @Param("password") String password);
+    int updatePasswordByUuid(@NonNull @Param("uuid") UUID uuid,
+                             @NonNull @Param("password") String password);
 }

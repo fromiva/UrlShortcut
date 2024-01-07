@@ -6,9 +6,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.job4j.urlshortcut.model.Server;
 import ru.job4j.urlshortcut.repository.ServerRepository;
+import ru.job4j.urlshortcut.util.AccessForbiddenException;
 import ru.job4j.urlshortcut.util.EntityNotFoundException;
-import ru.job4j.urlshortcut.util.UnauthorizedException;
 
+import java.security.Principal;
+import java.util.Objects;
 import java.util.UUID;
 
 /** {@code Server}-specific service to manage entries. */
@@ -29,23 +31,36 @@ public class ServerServiceImpl implements ServerService {
     /** {@inheritDoc} */
     @Override
     public Server getById(UUID uuid) {
-        return serverRepository.findById(uuid).orElseThrow(EntityNotFoundException::new);
+        return serverRepository.findById(uuid)
+                .orElseThrow(EntityNotFoundException::new);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Server getByIdAndHost(UUID uuid, String host) {
+        return serverRepository.findByUuidAndHost(uuid, host)
+                .orElseThrow(EntityNotFoundException::new);
     }
 
     /** {@inheritDoc} */
     @Override
     @Transactional
-    public boolean updatePassword(UUID uuid, String old, String current) {
+    public boolean updatePasswordByIdAndPrincipal(UUID uuid, Principal principal, String password) {
         Server server = getById(uuid);
-        if (!passwordEncoder.matches(old, server.getPassword())) {
-            throw new UnauthorizedException("Password is incorrect.");
+        if (!Objects.equals(server.getHost(), principal.getName())) {
+            throw new AccessForbiddenException();
         }
-        return serverRepository.updatePasswordById(uuid, passwordEncoder.encode(current)) > 0;
+        return serverRepository.updatePasswordByUuid(uuid, passwordEncoder.encode(password)) > 0;
     }
 
     /** {@inheritDoc} */
     @Override
-    public boolean deleteById(UUID uuid) {
-        return serverRepository.deleteByIdAndReturnCount(uuid) > 0;
+    @Transactional
+    public boolean deleteByIdAndPrincipal(UUID uuid, Principal principal) {
+        Server server = getById(uuid);
+        if (!Objects.equals(server.getHost(), principal.getName())) {
+            throw new AccessForbiddenException();
+        }
+        return serverRepository.deleteByUuid(uuid) > 0;
     }
 }

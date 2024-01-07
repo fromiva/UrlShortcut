@@ -13,15 +13,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import ru.job4j.urlshortcut.dto.ServerPasswordChangeDto;
+import ru.job4j.urlshortcut.dto.PasswordDto;
 import ru.job4j.urlshortcut.dto.ServerRegistrationDto;
 import ru.job4j.urlshortcut.dto.ServerRegistrationDtoMapper;
 import ru.job4j.urlshortcut.model.Server;
 import ru.job4j.urlshortcut.service.ServerService;
 import ru.job4j.urlshortcut.util.EntityNotFoundException;
-import ru.job4j.urlshortcut.util.UnauthorizedException;
+import ru.job4j.urlshortcut.util.AccessUnauthorizedException;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.UUID;
 
 /** Controller class to handle requests for {@code Server} entities. */
@@ -52,12 +53,15 @@ public class ServerController {
     /**
      * Handles request to get {@code Server} entity.
      * @param uuid ID of the {@code Server}
+     * @param principal JWT authorized user
      * @return persisted server entity with specified ID
      */
     @GetMapping("{uuid}")
-    public ResponseEntity<Server> getServerByUuid(@PathVariable String uuid) {
+    public ResponseEntity<Server> getServerByUuid(@PathVariable String uuid, Principal principal) {
         try {
-            return ResponseEntity.ok(serverService.getById(UUID.fromString(uuid)));
+            Server server = serverService.getByIdAndHost(
+                    UUID.fromString(uuid), principal.getName());
+            return ResponseEntity.ok(server);
         } catch (EntityNotFoundException | IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Server with ID " + uuid + " not found.");
@@ -71,17 +75,17 @@ public class ServerController {
      * @return status of the performed operation
      */
     @PatchMapping("{uuid}")
-    public ResponseEntity<Void> changeServerPassword(
-            @PathVariable String uuid, @Valid @RequestBody ServerPasswordChangeDto dto) {
+    public ResponseEntity<Void> updateServerPassword(
+            @PathVariable String uuid, @Valid @RequestBody PasswordDto dto, Principal principal) {
         try {
-            boolean success = serverService.updatePassword(
-                    UUID.fromString(uuid), dto.oldPassword(), dto.newPassword());
+            boolean success = serverService.updatePasswordByIdAndPrincipal(
+                    UUID.fromString(uuid), principal, dto.password());
             return success ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
         } catch (EntityNotFoundException | IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Server with ID " + uuid + " not found.");
-        } catch (UnauthorizedException exception) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, exception.getMessage());
+        } catch (AccessUnauthorizedException exception) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, exception.getMessage());
         }
     }
 
@@ -91,9 +95,10 @@ public class ServerController {
      * @return status of the performed operation
      */
     @DeleteMapping("{uuid}")
-    public ResponseEntity<Void> deleteServer(@PathVariable String uuid) {
+    public ResponseEntity<Void> deleteServer(@PathVariable String uuid, Principal principal) {
         try {
-            boolean success = serverService.deleteById(UUID.fromString(uuid));
+            boolean success = serverService
+                    .deleteByIdAndPrincipal(UUID.fromString(uuid), principal);
             return success ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
         } catch (EntityNotFoundException | IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,

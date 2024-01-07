@@ -93,12 +93,9 @@ paths:
             schema:
               type: object
               required:
-                - oldPassword
-                - newPassword
+                - password
               properties:
-                oldPassword:
-                  $ref: '#/components/schemas/Password'
-                newPassword:
+                password:
                   $ref: '#/components/schemas/Password'
       responses:
         200:

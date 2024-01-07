@@ -1,9 +1,10 @@
 package ru.job4j.urlshortcut.service;
 
 import ru.job4j.urlshortcut.model.Server;
+import ru.job4j.urlshortcut.util.AccessForbiddenException;
 import ru.job4j.urlshortcut.util.EntityNotFoundException;
-import ru.job4j.urlshortcut.util.UnauthorizedException;
 
+import java.security.Principal;
 import java.util.UUID;
 
 /** {@code Server}-specific service interface. */
@@ -22,29 +23,41 @@ public interface ServerService {
      *
      * @param uuid ID of the target entity
      * @return target entity
-     * @exception EntityNotFoundException when entity with specified ID cannot be found
+     * @throws EntityNotFoundException when entity with specified ID cannot be found
      */
     Server getById(UUID uuid);
 
     /**
-     * Handles requests to change entity security password.
+     * Handles requests to get entity by ID and hostname.
      *
-     * @param uuid    ID of the target entity
-     * @param old     existing password
-     * @param current new password to set
+     * @param uuid ID of the target entity
+     * @param host server hostname
      * @return target entity
      * @throws EntityNotFoundException when entity with specified ID cannot be found
      */
-    boolean updatePassword(UUID uuid, String old, String current);
+    Server getByIdAndHost(UUID uuid, String host);
+
+    /**
+     * Handles requests to change entity security password.
+     *
+     * @param uuid      ID of the target {@code Server} entity
+     * @param principal user authentication
+     * @param password  new password to set
+     * @return target entity
+     * @throws EntityNotFoundException when entity with specified ID cannot be found
+     * @throws AccessForbiddenException when {@code principal}'s name doesn't match server host
+     */
+    boolean updatePasswordByIdAndPrincipal(UUID uuid, Principal principal, String password);
 
     /**
      * Handles requests to delete {@code Server} entity by ID.
      *
-     * @param uuid ID of the target entity
+     * @param uuid      ID of the target entity
+     * @param principal user authentication
      * @return deleted entity
-     * @throws EntityNotFoundException when entity with specified ID cannot be found
-     * @throws UnauthorizedException when access credentials is incorrect
+     * @throws EntityNotFoundException     when entity with specified ID cannot be found
+     * @throws AccessForbiddenException when {@code principal}'s name doesn't match server host
      */
-    boolean deleteById(UUID uuid);
+    boolean deleteByIdAndPrincipal(UUID uuid, Principal principal);
 
 }

@@ -16,6 +16,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import ru.job4j.urlshortcut.dto.JwtDto;
+import ru.job4j.urlshortcut.dto.LoginDto;
 import ru.job4j.urlshortcut.dto.ServerRegistrationDto;
 import ru.job4j.urlshortcut.model.ErrorDetail;
 import ru.job4j.urlshortcut.model.Server;
@@ -45,6 +47,7 @@ class UrlShortcutApplicationTests {
     private String domainUrl;
     private final String regUrl = "/api/servers/register";
     private final String idUrl = "/api/servers/";
+    private final String tokenUrl = "/api/token";
     private final TestRestTemplate restTemplate = new TestRestTemplate();
     private final JsonMapper mapper = JsonMapper.builder().build();
 
@@ -58,7 +61,7 @@ class UrlShortcutApplicationTests {
         serverRepository.deleteAll();
     }
 
-    /** Default Spring Boot test that checks Correct Spring Application Context loading. */
+    /** Default Spring Boot test that checks the Correct Spring Application Context loading. */
     @Test
     void contextLoads() { }
 
@@ -73,32 +76,54 @@ class UrlShortcutApplicationTests {
         String json = mapper.writeValueAsString(new ServerRegistrationDto(host, password, desc));
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(APPLICATION_JSON);
-        HttpEntity<String> request = new HttpEntity<>(json, headers);
+        HttpEntity<String> requestServer = new HttpEntity<>(json, headers);
 
         ResponseEntity<Server> responseCreate = restTemplate
-                .postForEntity(domainUrl + regUrl, request, Server.class);
+                .postForEntity(domainUrl + regUrl, requestServer, Server.class);
         assertThat(responseCreate.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(responseCreate.hasBody()).isTrue();
         assertThat(responseCreate.getBody()).isInstanceOf(Server.class);
 
+        /* Get access token */
+        String tokenJson = mapper.writeValueAsString(
+                new LoginDto(responseCreate.getBody().getUuid().toString(), password));
+        HttpEntity<String> requestToken = new HttpEntity<>(tokenJson, headers);
+        ResponseEntity<JwtDto> responseJwt = restTemplate
+                .postForEntity(domainUrl + tokenUrl, requestToken, JwtDto.class);
+        assertThat(responseJwt.hasBody()).isTrue();
+
+        String token = responseJwt.getBody().token();
+        HttpHeaders headerBearer = new HttpHeaders();
+        headerBearer.setBearerAuth(token);
+        HttpEntity<String> requestBearer = new HttpEntity<>(headerBearer);
+
         /* Get the created entity */
-        ResponseEntity<Server> responseGet = restTemplate.getForEntity(
-                domainUrl + idUrl + responseCreate.getBody().getUuid(), Server.class);
+        ResponseEntity<Server> responseGet = restTemplate.exchange(
+                domainUrl + idUrl + responseCreate.getBody().getUuid(),
+                HttpMethod.GET, requestBearer, Server.class);
         assertThat(responseGet.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(responseGet.hasBody()).isTrue();
         assertThat(responseGet.getBody()).isInstanceOf(Server.class);
         assertThat(responseCreate.getBody().getUuid()).isEqualTo(responseGet.getBody().getUuid());
         assertThat(responseCreate.getBody().getHost()).isEqualTo(responseGet.getBody().getHost());
 
+        /* Try to get an entity by incorrect UUID */
+        ResponseEntity<ErrorDetail> responseNotGet = restTemplate.exchange(
+                domainUrl + idUrl + UUID.randomUUID(),
+                HttpMethod.GET, requestBearer, ErrorDetail.class);
+        assertThat(responseNotGet.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(responseGet.hasBody()).isTrue();
+
         /* Delete the created entity */
         ResponseEntity<Void> responseDelete = restTemplate.exchange(
                 domainUrl + idUrl + responseCreate.getBody().getUuid(),
-                HttpMethod.DELETE, HttpEntity.EMPTY, Void.class);
+                HttpMethod.DELETE, requestBearer, Void.class);
         assertThat(responseDelete.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
-        /* Check that the created entity actually deleted */
-        ResponseEntity<ErrorDetail> responseCheck = restTemplate.getForEntity(
-                domainUrl + idUrl + responseCreate.getBody().getUuid(), ErrorDetail.class);
+        /* Check that the created entity is actually deleted */
+        ResponseEntity<ErrorDetail> responseCheck = restTemplate.exchange(
+                domainUrl + idUrl + responseCreate.getBody().getUuid(),
+                HttpMethod.GET, requestBearer, ErrorDetail.class);
         assertThat(responseCheck.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(responseCheck.hasBody()).isTrue();
     }
@@ -120,14 +145,5 @@ class UrlShortcutApplicationTests {
         assertThat(error.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(error.hasBody()).isTrue();
         assertThat(error.getBody()).isInstanceOf(ErrorDetail.class);
-    }
-
-    /** Checks wrong request when {@code Server} cannot be found. */
-    @Test
-    void whenGetServerByIncorrectIdThenNotFound() {
-        ResponseEntity<ErrorDetail> response = restTemplate.getForEntity(
-                domainUrl + idUrl + UUID.randomUUID(), ErrorDetail.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.hasBody()).isTrue();
     }
 }

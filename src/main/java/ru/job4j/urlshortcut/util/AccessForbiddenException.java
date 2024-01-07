@@ -4,7 +4,7 @@ import lombok.experimental.StandardException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-/** Unchecked exception thrown when authorization information is incorrect. */
+/** Unchecked exception thrown when authorization is rejected. */
 @StandardException
-@ResponseStatus(HttpStatus.UNAUTHORIZED)
-public class UnauthorizedException extends RuntimeException { }
+@ResponseStatus(HttpStatus.FORBIDDEN)
+public class AccessForbiddenException extends RuntimeException { }

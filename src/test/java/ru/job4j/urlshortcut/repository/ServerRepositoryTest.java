@@ -40,26 +40,38 @@ class ServerRepositoryTest {
     }
 
     @Test
-    void whenDeleteByIdExistingEntityThenSuccess() {
+    void whenGetByUuidAndHostExistingEntityThenSuccess() {
         repository.save(server);
-        assertThat(repository.deleteByIdAndReturnCount(server.getUuid())).isOne();
+        assertThat(repository.findByUuidAndHost(server.getUuid(), host)).isNotEmpty();
     }
 
     @Test
-    void whenDeleteByIdNotExistingEntityThenZeroDeleted() {
-        assertThat(repository.deleteByIdAndReturnCount(uuid)).isZero();
-    }
-
-    @Test
-    void whenUpdatePasswordByIdForExistingEntityThenSuccess() {
-        String newPassword = encoder.encode("password1");
+    void whenGetByUuidAndIncorrectHostExistingEntityThenEmptyOptional() {
         repository.save(server);
-        assertThat(repository.updatePasswordById(server.getUuid(), newPassword)).isOne();
+        assertThat(repository.findByUuidAndHost(server.getUuid(), "subdomain." + host)).isEmpty();
     }
 
     @Test
-    void whenUpdatePasswordByIdForNotExistingEntityThenZeroUpdated() {
-        String newPassword = encoder.encode("password1");
-        assertThat(repository.updatePasswordById(uuid, newPassword)).isZero();
+    void whenDeleteByUuidExistingEntityThenSuccess() {
+        repository.save(server);
+        assertThat(repository.deleteByUuid(server.getUuid())).isOne();
+    }
+
+    @Test
+    void whenDeleteByUuidNotExistingEntityThenZeroDeleted() {
+        assertThat(repository.deleteByUuid(uuid)).isZero();
+    }
+
+    @Test
+    void whenUpdatePasswordByUuidForExistingEntityThenSuccess() {
+        String newPassword = encoder.encode(password);
+        repository.save(server);
+        assertThat(repository.updatePasswordByUuid(server.getUuid(), newPassword)).isOne();
+    }
+
+    @Test
+    void whenUpdatePasswordByUuidForNotExistingEntityThenZeroUpdated() {
+        String newPassword = encoder.encode(password);
+        assertThat(repository.updatePasswordByUuid(uuid, newPassword)).isZero();
     }
 }

@@ -8,17 +8,18 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.urlshortcut.configuration.SecurityConfiguration;
-import ru.job4j.urlshortcut.dto.ServerPasswordChangeDto;
+import ru.job4j.urlshortcut.dto.PasswordDto;
 import ru.job4j.urlshortcut.dto.ServerRegistrationDto;
 import ru.job4j.urlshortcut.model.Server;
 import ru.job4j.urlshortcut.model.Status;
 import ru.job4j.urlshortcut.service.ServerService;
 import ru.job4j.urlshortcut.util.EntityNotFoundException;
-import ru.job4j.urlshortcut.util.UnauthorizedException;
+import ru.job4j.urlshortcut.util.AccessUnauthorizedException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,6 +28,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
@@ -55,10 +57,11 @@ class ServerControllerTest {
     private final String desc = "Some description";
     private final Server server = new Server(null, host, password, time, time, status, desc);
     private final Server serverWithId = new Server(uuid, host, password, time, time, status, desc);
+    private final String authority = "SCOPE_USER";
 
     private final URI uriReg = new URI("/api/servers/register");
     private final URI uriId = new URI("/api/servers/" + uuid);
-    private final URI uriWrongUuid = new URI("/api/servers/9b307a38-0253-476b-9977");
+    private final URI uriWrongUuid = new URI("/api/servers/" + uuid.toString().substring(0, 22));
     private final JsonMapper mapper = JsonMapper.builder().build();
 
     ServerControllerTest() throws URISyntaxException { }
@@ -151,8 +154,9 @@ class ServerControllerTest {
     }
 
     @Test
-    void getServerByIdWhenCorrectIdThenGetServer() throws Exception {
-        when(service.getById(uuid)).thenReturn(serverWithId);
+    @WithMockUser(username = host, authorities = authority)
+    void getServerByIdWhenCorrectIdAndCorrectUserThenGetServer() throws Exception {
+        when(service.getByIdAndHost(eq(uuid), any())).thenReturn(serverWithId);
         mockMvc.perform(request(GET, uriId)
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -163,8 +167,19 @@ class ServerControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "subdomain." + host, authorities = authority)
+    void getServerByIdWhenCorrectIdAndIncorrectUserThenNotFound() throws Exception {
+        when(service.getByIdAndHost(eq(uuid), any())).thenThrow(EntityNotFoundException.class);
+        mockMvc.perform(request(GET, uriId)
+                        .contentType(APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = host, authorities = authority)
     void getServerByIdCheckThatServerDoesNotContainPassword() throws Exception {
-        when(service.getById(uuid)).thenReturn(serverWithId);
+        when(service.getByIdAndHost(eq(uuid), any())).thenReturn(serverWithId);
         mockMvc.perform(request(GET, uriId)
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -173,8 +188,9 @@ class ServerControllerTest {
     }
 
     @Test
+    @WithMockUser(username = host, authorities = authority)
     void getServerByIdWhenIncorrectIdThenNotFound() throws Exception {
-        when(service.getById(uuid)).thenThrow(EntityNotFoundException.class);
+        when(service.getByIdAndHost(eq(uuid), any())).thenThrow(EntityNotFoundException.class);
         mockMvc.perform(request(GET, uriId)
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isNotFound())
@@ -182,12 +198,15 @@ class ServerControllerTest {
                         .isInstanceOf(ResponseStatusException.class));
     }
 
+    // todo: getByIncorrectHost
+
     @Test
+    @WithMockUser(username = host, authorities = authority)
     void changeServerPasswordWhenCorrectIdThenSuccess() throws Exception {
-        String newPassword = "password1";
-        ServerPasswordChangeDto dto = new ServerPasswordChangeDto(password, newPassword);
+        PasswordDto dto = new PasswordDto(password);
         String json = mapper.writeValueAsString(dto);
-        when(service.updatePassword(uuid, password, newPassword)).thenReturn(true);
+        when(service.updatePasswordByIdAndPrincipal(eq(uuid), any(), eq(password)))
+                .thenReturn(true);
         mockMvc.perform(request(PATCH, uriId)
                         .contentType(APPLICATION_JSON)
                         .content(json))
@@ -196,11 +215,11 @@ class ServerControllerTest {
     }
 
     @Test
+    @WithMockUser(username = host, authorities = authority)
     void changeServerPasswordWhenIncorrectIdThenNotFound() throws Exception {
-        String newPassword = "password1";
-        ServerPasswordChangeDto dto = new ServerPasswordChangeDto(password, newPassword);
+        PasswordDto dto = new PasswordDto(password);
         String json = mapper.writeValueAsString(dto);
-        when(service.updatePassword(uuid, password, newPassword))
+        when(service.updatePasswordByIdAndPrincipal(eq(uuid), any(), eq(password)))
                 .thenThrow(EntityNotFoundException.class);
         mockMvc.perform(request(PATCH, uriId)
                         .contentType(APPLICATION_JSON)
@@ -211,24 +230,25 @@ class ServerControllerTest {
     }
 
     @Test
-    void changeServerPasswordWhenIncorrectPasswordThenUnauthorized() throws Exception {
-        String newPassword = "password1";
-        ServerPasswordChangeDto dto = new ServerPasswordChangeDto(password, newPassword);
+    @WithMockUser(username = "subdomain" + host, authorities = authority)
+    void changeServerPasswordByIncorrectUserThenForbidden() throws Exception {
+        PasswordDto dto = new PasswordDto(password);
         String json = mapper.writeValueAsString(dto);
-        when(service.updatePassword(uuid, password, newPassword))
-                .thenThrow(UnauthorizedException.class);
+        when(service.updatePasswordByIdAndPrincipal(eq(uuid), any(), eq(password)))
+                .thenThrow(AccessUnauthorizedException.class);
         mockMvc.perform(request(PATCH, uriId)
                         .contentType(APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isUnauthorized())
+                .andExpect(status().isForbidden())
                 .andExpect(result -> assertThat(result.getResolvedException())
                         .isInstanceOf(ResponseStatusException.class));
     }
 
     @Test
+    @WithMockUser(username = host, authorities = authority)
     void changeServerPasswordWhenIncorrectUuidFormatThenNotFound() throws Exception {
         String newPassword = "password1";
-        ServerPasswordChangeDto dto = new ServerPasswordChangeDto(password, newPassword);
+        PasswordDto dto = new PasswordDto(newPassword);
         String json = mapper.writeValueAsString(dto);
         mockMvc.perform(request(PATCH, uriWrongUuid)
                         .contentType(APPLICATION_JSON)
@@ -239,8 +259,9 @@ class ServerControllerTest {
     }
 
     @Test
+    @WithMockUser(username = host, authorities = authority)
     void deleteServerWhenCorrectIdThenSuccess() throws Exception {
-        when(service.deleteById(uuid)).thenReturn(true);
+        when(service.deleteByIdAndPrincipal(eq(uuid), any())).thenReturn(true);
         mockMvc.perform(request(DELETE, uriId)
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isNoContent())
@@ -248,8 +269,10 @@ class ServerControllerTest {
     }
 
     @Test
+    @WithMockUser(username = host, authorities = authority)
     void deleteServerWhenIncorrectIdThenNotFound() throws Exception {
-        when(service.deleteById(uuid)).thenThrow(EntityNotFoundException.class);
+        when(service.deleteByIdAndPrincipal(eq(uuid), any()))
+                .thenThrow(EntityNotFoundException.class);
         mockMvc.perform(request(DELETE, uriId)
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isNotFound())
@@ -258,6 +281,7 @@ class ServerControllerTest {
     }
 
     @Test
+    @WithMockUser(username = host, authorities = authority)
     void deleteServerWhenIncorrectUuidFormatThenNotFound() throws Exception {
         mockMvc.perform(request(DELETE, uriWrongUuid)
                         .contentType(APPLICATION_JSON))
