@@ -14,7 +14,6 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.urlshortcut.configuration.SecurityConfiguration;
 import ru.job4j.urlshortcut.dto.LoginDto;
 import ru.job4j.urlshortcut.service.SecurityService;
-import ru.job4j.urlshortcut.service.SecurityServiceImpl;
 import ru.job4j.urlshortcut.util.AccessUnauthorizedException;
 import ru.job4j.urlshortcut.util.EntityNotFoundException;
 
@@ -33,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(SecurityController.class)
 @AutoConfigureMockMvc(webClientEnabled = false, webDriverEnabled = false)
-@Import({SecurityConfiguration.class, SecurityServiceImpl.class})
+@Import(SecurityConfiguration.class)
 class SecurityControllerTest {
 
     @Autowired
