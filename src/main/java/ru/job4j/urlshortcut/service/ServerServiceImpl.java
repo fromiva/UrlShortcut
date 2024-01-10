@@ -44,6 +44,13 @@ public class ServerServiceImpl implements ServerService {
 
     /** {@inheritDoc} */
     @Override
+    public Server getByHost(String host) {
+        return serverRepository.findByHost(host)
+                .orElseThrow(EntityNotFoundException::new);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     @Transactional
     public boolean updatePasswordByIdAndPrincipal(UUID uuid, Principal principal, String password) {
         Server server = getById(uuid);

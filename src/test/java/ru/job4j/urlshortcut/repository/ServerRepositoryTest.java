@@ -40,15 +40,27 @@ class ServerRepositoryTest {
     }
 
     @Test
-    void whenGetByUuidAndHostExistingEntityThenSuccess() {
+    void whenFindByUuidAndHostExistingEntityThenSuccess() {
         repository.save(server);
         assertThat(repository.findByUuidAndHost(server.getUuid(), host)).isNotEmpty();
     }
 
     @Test
-    void whenGetByUuidAndIncorrectHostExistingEntityThenEmptyOptional() {
+    void whenFindByUuidAndIncorrectHostExistingEntityThenEmptyOptional() {
         repository.save(server);
         assertThat(repository.findByUuidAndHost(server.getUuid(), "subdomain." + host)).isEmpty();
+    }
+
+    @Test
+    void whenFindByHostExistingEntityThenSuccess() {
+        repository.save(server);
+        assertThat(repository.findByHost(host)).isNotEmpty();
+    }
+
+    @Test
+    void whenFindByIncorrectHostExistingEntityThenEmptyOptional() {
+        repository.save(server);
+        assertThat(repository.findByHost("subdomain." + host)).isEmpty();
     }
 
     @Test

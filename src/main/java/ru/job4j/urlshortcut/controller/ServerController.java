@@ -53,7 +53,7 @@ public class ServerController {
     /**
      * Handles request to get {@code Server} entity.
      * @param uuid ID of the {@code Server}
-     * @param principal JWT authorized user
+     * @param principal JWT authenticated user
      * @return persisted server entity with specified ID
      */
     @GetMapping("{uuid}")
@@ -72,6 +72,7 @@ public class ServerController {
      * Handles requests to change server password.
      * @param uuid ID of the {@code Server}
      * @param dto data transfer object with security information
+     * @param principal JWT authenticated user
      * @return status of the performed operation
      */
     @PatchMapping("{uuid}")
@@ -92,6 +93,7 @@ public class ServerController {
     /**
      * Handles requests to delete {@code Server} entity.
      * @param uuid ID of the {@code Server}
+     * @param principal JWT authenticated user
      * @return status of the performed operation
      */
     @DeleteMapping("{uuid}")

@@ -1,5 +1,6 @@
 package ru.job4j.urlshortcut.service;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import ru.job4j.urlshortcut.model.Server;
 import ru.job4j.urlshortcut.util.AccessForbiddenException;
 import ru.job4j.urlshortcut.util.EntityNotFoundException;
@@ -15,6 +16,8 @@ public interface ServerService {
      *
      * @param server entity to save
      * @return saved entity with the actual generated ID
+     * @throws DataIntegrityViolationException when an attempt to insert data
+     * results in violation of an integrity constraint
      */
     Server create(Server server);
 
@@ -38,6 +41,15 @@ public interface ServerService {
     Server getByIdAndHost(UUID uuid, String host);
 
     /**
+     * Handles requests to get entity by hostname.
+     *
+     * @param host server hostname
+     * @return target entity
+     * @throws EntityNotFoundException when entity with specified ID cannot be found
+     */
+    Server getByHost(String host);
+
+    /**
      * Handles requests to change entity security password.
      *
      * @param uuid      ID of the target {@code Server} entity
@@ -54,7 +66,7 @@ public interface ServerService {
      *
      * @param uuid      ID of the target entity
      * @param principal user authentication
-     * @return deleted entity
+     * @return operation result
      * @throws EntityNotFoundException     when entity with specified ID cannot be found
      * @throws AccessForbiddenException when {@code principal}'s name doesn't match server host
      */

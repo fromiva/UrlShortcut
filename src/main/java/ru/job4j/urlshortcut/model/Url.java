@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -17,6 +16,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.validation.constraints.Size;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -54,7 +54,6 @@ public class Url {
 
     /** Date and time when the URL will be expired and no longer will be available. */
     @Column(nullable = false)
-    @UpdateTimestamp
     private LocalDateTime expired;
 
     /** URL lifecycle and access status. */
@@ -62,5 +61,6 @@ public class Url {
     private Status status = Status.REGISTERED;
 
     /** URL description. */
+    @Size(max = 256, message = "Description maximum length must be 256 symbols")
     private String description;
 }

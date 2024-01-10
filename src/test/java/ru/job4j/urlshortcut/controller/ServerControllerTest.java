@@ -155,7 +155,7 @@ class ServerControllerTest {
 
     @Test
     @WithMockUser(username = host, authorities = authority)
-    void getServerByIdWhenCorrectIdAndCorrectUserThenGetServer() throws Exception {
+    void getServerByIdWhenCorrectIdAndCorrectPrincipalThenGetServer() throws Exception {
         when(service.getByIdAndHost(eq(uuid), any())).thenReturn(serverWithId);
         mockMvc.perform(request(GET, uriId)
                         .contentType(APPLICATION_JSON))
@@ -168,7 +168,7 @@ class ServerControllerTest {
 
     @Test
     @WithMockUser(username = "subdomain." + host, authorities = authority)
-    void getServerByIdWhenCorrectIdAndIncorrectUserThenNotFound() throws Exception {
+    void getServerByIdWhenCorrectIdAndIncorrectPrincipalThenNotFound() throws Exception {
         when(service.getByIdAndHost(eq(uuid), any())).thenThrow(EntityNotFoundException.class);
         mockMvc.perform(request(GET, uriId)
                         .contentType(APPLICATION_JSON))
@@ -197,8 +197,6 @@ class ServerControllerTest {
                 .andExpect(result -> assertThat(result.getResolvedException())
                         .isInstanceOf(ResponseStatusException.class));
     }
-
-    // todo: getByIncorrectHost
 
     @Test
     @WithMockUser(username = host, authorities = authority)
@@ -230,7 +228,7 @@ class ServerControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "subdomain" + host, authorities = authority)
+    @WithMockUser(username = "subdomain." + host, authorities = authority)
     void changeServerPasswordByIncorrectUserThenForbidden() throws Exception {
         PasswordDto dto = new PasswordDto(password);
         String json = mapper.writeValueAsString(dto);

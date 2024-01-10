@@ -24,14 +24,20 @@ public interface ServerRepository extends JpaRepository<Server, UUID> {
                                        @NonNull String host);
 
     /**
+     * Retrieves {@code Server} entity from the persistent storage
+     * @param host unique server hostname
+     * @return target entity
+     */
+    Optional<Server> findByHost(@NonNull String host);
+
+    /**
      * Deletes {@code Server} entity from the repository and returns the result of the operation.
      * @param uuid ID of the server to delete
      * @return numer of the deleted rows
      */
     @Transactional
     @Modifying
-    @Query("DELETE Server s WHERE s.uuid = :uuid")
-    int deleteByUuid(@NonNull @Param("uuid") UUID uuid);
+    int deleteByUuid(@NonNull UUID uuid);
 
     /**
      * Updates password of a {@code Server}.

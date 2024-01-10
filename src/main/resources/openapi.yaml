@@ -140,8 +140,11 @@ paths:
               properties:
                 url:
                   $ref: '#/components/schemas/Url'
-                expired:
-                  $ref: '#/components/schemas/Timestamp'
+                expiration:
+                  type: integer
+                  format: int64
+                  example: 3600
+                  description: expiration time in seconds
                 description:
                   $ref: '#/components/schemas/Description'
       responses:

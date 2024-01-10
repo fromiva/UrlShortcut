@@ -4,7 +4,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,7 +36,7 @@ class ServerServiceImplTest {
     private PasswordEncoder encoder;
     @MockBean
     private ServerRepository repository;
-    @Mock
+    @MockBean
     private Principal principal;
     private ServerService serverService;
 
@@ -97,8 +96,9 @@ class ServerServiceImplTest {
 
     @Test
     void whenGetByIncorrectHostThenGetException() {
-        when(repository.findByUuidAndHost(uuid, host)).thenReturn(Optional.of(serverWithId));
-        assertThatThrownBy(() -> serverService.getByIdAndHost(uuid, "subdomain." + host))
+        String wrongHost = "subdomain." + host;
+        when(repository.findByUuidAndHost(uuid, wrongHost)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> serverService.getByIdAndHost(uuid, wrongHost))
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
@@ -115,8 +115,6 @@ class ServerServiceImplTest {
     @Test
     void whenUpdatePasswordByIncorrectIdThenGetException() {
         String newPassword = "password1";
-        when(repository.findByUuidAndHost(uuid, host)).thenReturn(Optional.empty());
-        when(principal.getName()).thenReturn(host);
         assertThatThrownBy(() -> serverService
                 .updatePasswordByIdAndPrincipal(uuid, principal, newPassword))
                 .isInstanceOf(EntityNotFoundException.class);
@@ -143,13 +141,12 @@ class ServerServiceImplTest {
     @Test
     void whenDeleteByIncorrectIdThenGetException() {
         when(repository.findById(uuid)).thenThrow(EntityNotFoundException.class);
-        when(principal.getName()).thenReturn(host);
         assertThatThrownBy(() -> serverService.deleteByIdAndPrincipal(uuid, principal))
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
-    void whenDeleteByIncorrectHostThenGetException() {
+    void whenDeleteByIncorrectPrincipalThenGetException() {
         when(repository.findById(uuid)).thenReturn(Optional.of(serverWithId));
         when(principal.getName()).thenReturn("subdomain." + host);
         assertThatThrownBy(() -> serverService.deleteByIdAndPrincipal(uuid, principal))
