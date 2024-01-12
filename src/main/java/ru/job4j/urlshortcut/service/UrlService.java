@@ -34,6 +34,15 @@ public interface UrlService {
     Url getById(UUID uuid);
 
     /**
+     * Handles requests to get entity by ID and log access information.
+     *
+     * @param uuid ID of the target entity
+     * @return target entity
+     * @throws EntityNotFoundException when entity with specified ID cannot be found
+     */
+    Url getByIdAndLog(UUID uuid);
+
+    /**
      * Handles requests to get all the entities with the specified server ID.
      *
      * @param uuid server ID
@@ -51,4 +60,12 @@ public interface UrlService {
      * @throws AccessForbiddenException when {@code principal}'s name doesn't match URL hostname
      */
     boolean deleteByIdAndPrincipal(UUID uuid, Principal principal);
+
+    /**
+     * Handles requests to count {@code Url} visits..
+     *
+     * @param uuid ID of the target entity
+     * @return count result
+     */
+    long getUrlVisitsCount(UUID uuid);
 }

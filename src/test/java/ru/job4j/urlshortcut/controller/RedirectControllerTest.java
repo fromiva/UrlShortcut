@@ -51,7 +51,7 @@ class RedirectControllerTest {
     @Test
     void redirectByUuidWhenCorrectUuidThenGetRedirection() throws Exception {
         Url url = new Url(uuid, servUuid, path, time, time.plusDays(1), status, null);
-        when(service.getById(uuid)).thenReturn(url);
+        when(service.getByIdAndLog(uuid)).thenReturn(url);
         mockMvc.perform(request(GET, uriId))
                 .andExpect(status().is(302))
                 .andExpect(result -> assertThat(result.getResponse()
@@ -61,13 +61,13 @@ class RedirectControllerTest {
     @Test
     void redirectByUuidWhenCorrectUuidAndExpiredThenGetGone() throws Exception {
         Url url = new Url(uuid, servUuid, path, time.minusDays(2), time.minusDays(1), status, null);
-        when(service.getById(uuid)).thenReturn(url);
+        when(service.getByIdAndLog(uuid)).thenReturn(url);
         mockMvc.perform(request(GET, uriId)).andExpect(status().isGone());
     }
 
     @Test
     void redirectByUuidWhenIncorrectUuidThenNotFound() throws Exception {
-        when(service.getById(uuid)).thenThrow(EntityNotFoundException.class);
+        when(service.getByIdAndLog(uuid)).thenThrow(EntityNotFoundException.class);
         mockMvc.perform(request(GET, uriId))
                 .andExpect(status().isNotFound())
                 .andExpect(result -> assertThat(result.getResolvedException())
@@ -76,7 +76,7 @@ class RedirectControllerTest {
 
     @Test
     void redirectByUuidWhenIncorrectUuidFormatThenNotFound() throws Exception {
-        when(service.getById(uuid)).thenThrow(EntityNotFoundException.class);
+        when(service.getByIdAndLog(uuid)).thenThrow(EntityNotFoundException.class);
         mockMvc.perform(request(GET, new URI("/redirect/" + uuid.toString().substring(0, 22))))
                 .andExpect(status().isNotFound())
                 .andExpect(result -> assertThat(result.getResolvedException())

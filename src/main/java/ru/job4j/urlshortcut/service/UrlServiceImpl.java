@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.job4j.urlshortcut.model.Url;
+import ru.job4j.urlshortcut.repository.UrlAccessRecordRepository;
 import ru.job4j.urlshortcut.repository.UrlRepository;
 import ru.job4j.urlshortcut.util.AccessForbiddenException;
 import ru.job4j.urlshortcut.util.EntityNotFoundException;
@@ -20,6 +21,7 @@ public class UrlServiceImpl implements UrlService {
 
     private final ServerService serverService;
     private final UrlRepository repository;
+    private final UrlAccessRecordRepository recordRepository;
 
     /** {@inheritDoc} */
     @Override
@@ -40,6 +42,12 @@ public class UrlServiceImpl implements UrlService {
 
     /** {@inheritDoc} */
     @Override
+    public Url getByIdAndLog(UUID uuid) {
+        return repository.findByIdAndLog(uuid).orElseThrow(EntityNotFoundException::new);
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public List<Url> getAllByServerId(UUID uuid) {
         return repository.findAllByServerUuid(uuid);
     }
@@ -53,5 +61,11 @@ public class UrlServiceImpl implements UrlService {
             throw new AccessForbiddenException();
         }
         return repository.deleteByUuid(uuid) > 0;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long getUrlVisitsCount(UUID uuid) {
+        return recordRepository.countByUrlUuid(uuid);
     }
 }

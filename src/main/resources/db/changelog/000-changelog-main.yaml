@@ -5,3 +5,16 @@ databaseChangeLog:
   - include:
       file: 002-ddl-create-urls-table.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 003-ddl-create-url-access-log-table.yaml
+      relativeToChangelogFile: true
+  - include:
+      # For PostgreSQL database only - supports access logging to separate table
+      context: dev, qa, prod
+      file: 004-ddl-create-url-access-log-function-pg.sql
+      relativeToChangelogFile: true
+  - include:
+      # For H2 database only - stub function without logging
+      context: test
+      file: 005-ddl-create-url-access-log-function-h2.sql
+      relativeToChangelogFile: true

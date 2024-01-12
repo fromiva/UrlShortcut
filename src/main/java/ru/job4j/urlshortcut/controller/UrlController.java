@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.urlshortcut.dto.UrlRegistrationDto;
 import ru.job4j.urlshortcut.dto.UrlRegistrationDtoMapper;
+import ru.job4j.urlshortcut.dto.UrlStatisticsDto;
 import ru.job4j.urlshortcut.model.Url;
 import ru.job4j.urlshortcut.service.UrlService;
 import ru.job4j.urlshortcut.util.AccessForbiddenException;
@@ -61,13 +62,16 @@ public class UrlController {
      * @return persisted {@code Url} entity with specified ID
      */
     @GetMapping("{uuid}")
-    public ResponseEntity<Url> getUrlByUuid(@PathVariable String uuid, Principal principal) {
+    public ResponseEntity<UrlStatisticsDto> getUrlByUuid(
+            @PathVariable String uuid, Principal principal) {
         try {
-            Url url = service.getById(UUID.fromString(uuid));
+            UUID id = UUID.fromString(uuid);
+            Url url = service.getById(id);
             if (!url.getUrl().getHost().equals(principal.getName())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN);
             }
-            return ResponseEntity.ok(url);
+            Long visited = service.getUrlVisitsCount(id);
+            return ResponseEntity.ok(new UrlStatisticsDto(url, visited));
         } catch (EntityNotFoundException | IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "URL with ID " + uuid + " not found.");

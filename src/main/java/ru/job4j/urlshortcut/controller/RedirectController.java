@@ -33,7 +33,7 @@ public class RedirectController {
     public RedirectView redirectByUuid(@PathVariable String uuid) {
         Url url;
         try {
-            url = service.getById(UUID.fromString(uuid));
+            url = service.getByIdAndLog(UUID.fromString(uuid));
         } catch (EntityNotFoundException | IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "URL with ID " + uuid + " not found.");

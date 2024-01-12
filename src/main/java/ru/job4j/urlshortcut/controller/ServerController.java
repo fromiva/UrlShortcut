@@ -16,13 +16,17 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.urlshortcut.dto.PasswordDto;
 import ru.job4j.urlshortcut.dto.ServerRegistrationDto;
 import ru.job4j.urlshortcut.dto.ServerRegistrationDtoMapper;
+import ru.job4j.urlshortcut.dto.ServerStatisticsDto;
 import ru.job4j.urlshortcut.model.Server;
+import ru.job4j.urlshortcut.model.Url;
 import ru.job4j.urlshortcut.service.ServerService;
+import ru.job4j.urlshortcut.service.UrlService;
 import ru.job4j.urlshortcut.util.EntityNotFoundException;
 import ru.job4j.urlshortcut.util.AccessUnauthorizedException;
 
 import javax.validation.Valid;
 import java.security.Principal;
+import java.util.List;
 import java.util.UUID;
 
 /** Controller class to handle requests for {@code Server} entities. */
@@ -32,6 +36,7 @@ import java.util.UUID;
 public class ServerController {
 
     private final ServerService serverService;
+    private final UrlService urlService;
 
     /**
      * Handles request for new server registration.
@@ -57,11 +62,13 @@ public class ServerController {
      * @return persisted server entity with specified ID
      */
     @GetMapping("{uuid}")
-    public ResponseEntity<Server> getServerByUuid(@PathVariable String uuid, Principal principal) {
+    public ResponseEntity<ServerStatisticsDto> getServerByUuid(
+            @PathVariable String uuid, Principal principal) {
         try {
-            Server server = serverService.getByIdAndHost(
-                    UUID.fromString(uuid), principal.getName());
-            return ResponseEntity.ok(server);
+            UUID id = UUID.fromString(uuid);
+            Server server = serverService.getByIdAndHost(id, principal.getName());
+            List<Url> urls = urlService.getAllByServerId(id);
+            return ResponseEntity.ok(new ServerStatisticsDto(server, urls));
         } catch (EntityNotFoundException | IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Server with ID " + uuid + " not found.");

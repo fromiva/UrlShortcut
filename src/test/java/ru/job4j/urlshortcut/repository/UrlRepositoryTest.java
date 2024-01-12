@@ -12,6 +12,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +35,21 @@ class UrlRepositoryTest {
     void beforeEach() {
         server = serverRepository.save(new Server(null, host, password,
                 time, time, status, null));
+    }
+
+    @Test
+    void whenFindByIdAndLogExistingThenGetPersistet() throws MalformedURLException {
+        URL path = new URL("https://" + server.getHost() + "/path1");
+        Url url = new Url(null, server.getUuid(), path, time, time, status, null);
+        urlRepository.save(url);
+        Optional<Url> actual = urlRepository.findByIdAndLog(url.getUuid());
+        assertThat(actual).isNotEmpty();
+        assertThat(actual.get().getUrl()).isEqualTo(path);
+    }
+
+    @Test
+    void whenFindByIdAndLogNotExistingThenGetEmptyOptional() {
+        assertThat(urlRepository.findByIdAndLog(UUID.randomUUID())).isEmpty();
     }
 
     @Test

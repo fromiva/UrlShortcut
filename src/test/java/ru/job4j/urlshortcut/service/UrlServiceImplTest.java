@@ -9,6 +9,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import ru.job4j.urlshortcut.model.Server;
 import ru.job4j.urlshortcut.model.Status;
 import ru.job4j.urlshortcut.model.Url;
+import ru.job4j.urlshortcut.repository.UrlAccessRecordRepository;
 import ru.job4j.urlshortcut.repository.UrlRepository;
 import ru.job4j.urlshortcut.util.AccessForbiddenException;
 import ru.job4j.urlshortcut.util.EntityNotFoundException;
@@ -31,6 +32,8 @@ class UrlServiceImplTest {
     @MockBean
     private UrlRepository repository;
     @MockBean
+    private UrlAccessRecordRepository logRepository;
+    @MockBean
     private ServerService serverService;
     @MockBean
     private Principal principal;
@@ -51,7 +54,7 @@ class UrlServiceImplTest {
 
     @BeforeEach
     void beforeEach() {
-        urlService = new UrlServiceImpl(serverService, repository);
+        urlService = new UrlServiceImpl(serverService, repository, logRepository);
 
     }
 
@@ -85,9 +88,15 @@ class UrlServiceImplTest {
     }
 
     @Test
-    void whenGetByIncorrectIdThenGetException() {
-        when(repository.findById(uuid)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> urlService.getById(uuid))
+    void whenGetByIdAndLogByCorrectIdThenGetPersisted() {
+        when(repository.findByIdAndLog(uuid)).thenReturn(Optional.of(urlWithId));
+        assertThat(urlService.getByIdAndLog(uuid)).isEqualTo(urlWithId);
+    }
+
+    @Test
+    void whenGetByIdAndLogByIncorrectIdThenGetException() {
+        when(repository.findByIdAndLog(uuid)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> urlService.getByIdAndLog(uuid))
                 .isInstanceOf(EntityNotFoundException.class);
     }
 

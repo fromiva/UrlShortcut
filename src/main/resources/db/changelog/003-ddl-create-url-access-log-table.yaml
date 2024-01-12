@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Sergei Ivanov (fromiva)
+      changes:
+        - createTable:
+            tableName:  url_access_log
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  startWith: 1
+                  incrementBy: 1
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: url_uuid
+                  type: UUID
+                  constraints:
+                    foreignKeyName: fk_url_uuid
+                    referencedTableName: urls
+                    referencedColumnNames: url_uuid
+                    deleteCascade: true
+                    nullable: false
+              - column:
+                  name: timestamp
+                  type: TIMESTAMP(6) WITHOUT TIME ZONE
+                  value: now()
+                  constraints:
+                    nullable: false

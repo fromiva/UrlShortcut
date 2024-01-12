@@ -174,17 +174,20 @@ class UrlControllerTest {
 
     @Test
     @WithMockUser(username = host, authorities = authority)
-    void getUrlByUuidWhenCorrectIdAndCorrectPrincipalThenGetUrl() throws Exception {
+    void getUrlByUuidWhenCorrectIdAndCorrectPrincipalThenGetUrlStatistics() throws Exception {
+        long count = 5L;
         when(service.getById(uuid)).thenReturn(urlWithId);
+        when(service.getUrlVisitsCount(uuid)).thenReturn(count);
         mockMvc.perform(request(GET, uriId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.uuid").value(uuid.toString()))
-                .andExpect(jsonPath("$.serverUuid").value(serverUuid.toString()))
-                .andExpect(jsonPath("$.url").value(path.toString()))
-                .andExpect(jsonPath("$.created").exists())
-                .andExpect(jsonPath("$.expired").exists())
-                .andExpect(jsonPath("$.status").value(status.toString()))
-                .andExpect(jsonPath("$.description").value(desc));
+                .andExpect(jsonPath("$.url.uuid").value(uuid.toString()))
+                .andExpect(jsonPath("$.url.serverUuid").value(serverUuid.toString()))
+                .andExpect(jsonPath("$.url.url").value(path.toString()))
+                .andExpect(jsonPath("$.url.created").exists())
+                .andExpect(jsonPath("$.url.expired").exists())
+                .andExpect(jsonPath("$.url.status").value(status.toString()))
+                .andExpect(jsonPath("$.url.description").value(desc))
+                .andExpect(jsonPath("$.visited").value(count));
     }
 
     @Test

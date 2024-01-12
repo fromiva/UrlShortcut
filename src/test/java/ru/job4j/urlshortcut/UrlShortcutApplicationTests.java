@@ -6,8 +6,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -19,7 +17,9 @@ import org.springframework.http.ResponseEntity;
 import ru.job4j.urlshortcut.dto.JwtDto;
 import ru.job4j.urlshortcut.dto.LoginDto;
 import ru.job4j.urlshortcut.dto.ServerRegistrationDto;
+import ru.job4j.urlshortcut.dto.ServerStatisticsDto;
 import ru.job4j.urlshortcut.dto.UrlRegistrationDto;
+import ru.job4j.urlshortcut.dto.UrlStatisticsDto;
 import ru.job4j.urlshortcut.model.ErrorDetail;
 import ru.job4j.urlshortcut.model.Server;
 import ru.job4j.urlshortcut.model.Url;
@@ -34,7 +34,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 @SpringBootTest(
         classes = UrlShortcutApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
 class UrlShortcutApplicationTests {
 
     @Autowired
@@ -106,14 +105,16 @@ class UrlShortcutApplicationTests {
         HttpEntity<String> requestBearer = new HttpEntity<>(headerBearer);
 
         /* Get the created server entity */
-        ResponseEntity<Server> responseGet = restTemplate.exchange(
+        ResponseEntity<ServerStatisticsDto> responseGet = restTemplate.exchange(
                 domainUrl + serverIdUrl + responseCreate.getBody().getUuid(),
-                HttpMethod.GET, requestBearer, Server.class);
+                HttpMethod.GET, requestBearer, ServerStatisticsDto.class);
         assertThat(responseGet.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(responseGet.hasBody()).isTrue();
-        assertThat(responseGet.getBody()).isInstanceOf(Server.class);
-        assertThat(responseCreate.getBody().getUuid()).isEqualTo(responseGet.getBody().getUuid());
-        assertThat(responseCreate.getBody().getHost()).isEqualTo(responseGet.getBody().getHost());
+        assertThat(responseGet.getBody()).isInstanceOf(ServerStatisticsDto.class);
+        assertThat(responseCreate.getBody().getUuid())
+                .isEqualTo(responseGet.getBody().server().getUuid());
+        assertThat(responseCreate.getBody().getHost())
+                .isEqualTo(responseGet.getBody().server().getHost());
 
         /* Try to get a server entity by incorrect UUID */
         ResponseEntity<ErrorDetail> responseNotGet = restTemplate.exchange(
@@ -168,15 +169,15 @@ class UrlShortcutApplicationTests {
         headers.setContentType(APPLICATION_JSON);
         HttpEntity<String> requestServer = new HttpEntity<>(json, headers);
 
-        ResponseEntity<Server> responseCreate = restTemplate
+        ResponseEntity<Server> responseServer = restTemplate
                 .postForEntity(domainUrl + serverRegUrl, requestServer, Server.class);
-        assertThat(responseCreate.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(responseCreate.hasBody()).isTrue();
-        assertThat(responseCreate.getBody()).isInstanceOf(Server.class);
+        assertThat(responseServer.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(responseServer.hasBody()).isTrue();
+        assertThat(responseServer.getBody()).isInstanceOf(Server.class);
 
         /* Get access token */
         String tokenJson = mapper.writeValueAsString(
-                new LoginDto(responseCreate.getBody().getUuid().toString(), password));
+                new LoginDto(responseServer.getBody().getUuid().toString(), password));
         HttpEntity<String> requestToken = new HttpEntity<>(tokenJson, headers);
         ResponseEntity<JwtDto> responseJwt = restTemplate
                 .postForEntity(domainUrl + tokenUrl, requestToken, JwtDto.class);
@@ -202,16 +203,17 @@ class UrlShortcutApplicationTests {
         assertThat(responseUrlCreate.getBody()).isInstanceOf(Url.class);
 
         /* Get the created URL entity */
-        ResponseEntity<Url> responseUrlGet = restTemplate.exchange(
+        ResponseEntity<UrlStatisticsDto> responseUrlGet = restTemplate.exchange(
                 domainUrl + urlIdUrl + responseUrlCreate.getBody().getUuid(),
-                HttpMethod.GET, requestBearer, Url.class);
+                HttpMethod.GET, requestBearer, UrlStatisticsDto.class);
         assertThat(responseUrlGet.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(responseUrlGet.hasBody()).isTrue();
-        assertThat(responseUrlGet.getBody()).isInstanceOf(Url.class);
+        assertThat(responseUrlGet.getBody()).isInstanceOf(UrlStatisticsDto.class);
         assertThat(responseUrlCreate.getBody().getUuid())
-                .isEqualTo(responseUrlGet.getBody().getUuid());
+                .isEqualTo(responseUrlGet.getBody().url().getUuid());
         assertThat(responseUrlCreate.getBody().getUrl())
-                .isEqualTo(responseUrlGet.getBody().getUrl());
+                .isEqualTo(responseUrlGet.getBody().url().getUrl());
+        assertThat(responseUrlGet.getBody().visited()).isZero();
 
         /* Create the same new URL entity twice and get error */
         ResponseEntity<ErrorDetail> error = restTemplate
@@ -242,7 +244,7 @@ class UrlShortcutApplicationTests {
 
         /* Delete the created server entity */
         ResponseEntity<Void> responseDelete = restTemplate.exchange(
-                domainUrl + serverIdUrl + responseCreate.getBody().getUuid(),
+                domainUrl + serverIdUrl + responseServer.getBody().getUuid(),
                 HttpMethod.DELETE, requestBearer, Void.class);
         assertThat(responseDelete.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
     }

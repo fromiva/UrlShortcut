@@ -18,12 +18,14 @@ import ru.job4j.urlshortcut.dto.ServerRegistrationDto;
 import ru.job4j.urlshortcut.model.Server;
 import ru.job4j.urlshortcut.model.Status;
 import ru.job4j.urlshortcut.service.ServerService;
+import ru.job4j.urlshortcut.service.UrlService;
 import ru.job4j.urlshortcut.util.EntityNotFoundException;
 import ru.job4j.urlshortcut.util.AccessUnauthorizedException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -48,6 +50,8 @@ class ServerControllerTest {
     private MockMvc mockMvc;
     @MockBean
     private ServerService service;
+    @MockBean
+    private UrlService urlService;
 
     private final UUID uuid = UUID.randomUUID();
     private final String host = "example.com";
@@ -155,15 +159,17 @@ class ServerControllerTest {
 
     @Test
     @WithMockUser(username = host, authorities = authority)
-    void getServerByIdWhenCorrectIdAndCorrectPrincipalThenGetServer() throws Exception {
+    void getServerByIdWhenCorrectIdAndCorrectPrincipalThenGetServerStatistics() throws Exception {
         when(service.getByIdAndHost(eq(uuid), any())).thenReturn(serverWithId);
+        when((urlService.getAllByServerId(uuid))).thenReturn(List.of());
         mockMvc.perform(request(GET, uriId)
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.uuid").value(uuid.toString()))
-                .andExpect(jsonPath("$.host").value(host))
-                .andExpect(jsonPath("$.status").value(status.name()))
-                .andExpect(jsonPath("$.description").value(desc));
+                .andExpect(jsonPath("$.server.uuid").value(uuid.toString()))
+                .andExpect(jsonPath("$.server.host").value(host))
+                .andExpect(jsonPath("$.server.status").value(status.name()))
+                .andExpect(jsonPath("$.server.description").value(desc))
+                .andExpect(jsonPath("$.urls").isEmpty());
     }
 
     @Test
@@ -178,13 +184,14 @@ class ServerControllerTest {
 
     @Test
     @WithMockUser(username = host, authorities = authority)
-    void getServerByIdCheckThatServerDoesNotContainPassword() throws Exception {
+    void getServerByIdCheckThatServerStatisticsDoesNotContainPassword() throws Exception {
         when(service.getByIdAndHost(eq(uuid), any())).thenReturn(serverWithId);
+        when((urlService.getAllByServerId(uuid))).thenReturn(List.of());
         mockMvc.perform(request(GET, uriId)
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.uuid").value(uuid.toString()))
-                .andExpect(jsonPath("$.password").doesNotExist());
+                .andExpect(jsonPath("$.server.uuid").value(uuid.toString()))
+                .andExpect(jsonPath("$.server.password").doesNotExist());
     }
 
     @Test
