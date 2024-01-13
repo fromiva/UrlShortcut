@@ -1,6 +1,7 @@
 package ru.job4j.urlshortcut.service;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import ru.job4j.urlshortcut.configuration.SecurityConfiguration;
 import ru.job4j.urlshortcut.configuration.SecurityProperties;
@@ -36,8 +38,6 @@ class SecurityServiceImplTest {
     @Autowired
     private JwtEncoder jwtEncoder;
     @Autowired
-    private JwtDecoder jwtDecoder;
-    @Autowired
     private SecurityProperties properties;
     private SecurityService securityService;
 
@@ -56,14 +56,6 @@ class SecurityServiceImplTest {
     }
 
     @Test
-    void generateTokenWhenCorrectLoginThenGetToken() {
-        when(serverService.getById(uuid)).thenReturn(server);
-        String jwt = securityService.generateToken(uuid, password).getTokenValue();
-        assertThatCode(() -> jwtDecoder.decode(jwt)).doesNotThrowAnyException();
-        assertThat(jwtDecoder.decode(jwt).getClaims().get("sub")).isEqualTo(host);
-    }
-
-    @Test
     void generateTokenWhenIncorrectUuidThenGetException() {
         when(serverService.getById(uuid)).thenThrow(EntityNotFoundException.class);
         assertThatThrownBy(() -> securityService.generateToken(uuid, password))
@@ -75,5 +67,83 @@ class SecurityServiceImplTest {
         when(serverService.getById(uuid)).thenReturn(server);
         assertThatThrownBy(() -> securityService.generateToken(uuid, password + "0"))
                 .isInstanceOf(AccessUnauthorizedException.class);
+    }
+
+    @Nested
+    @ContextConfiguration(classes = SecurityConfiguration.class)
+    @TestPropertySource(properties = "ru.job4j.urlshortcut.security.algorithm=hs256")
+    public class SecurityServiceImplWithHs256AlgorithmTest {
+
+        @Autowired
+        private PasswordEncoder passwordEncoder;
+        @Autowired
+        private JwtEncoder jwtEncoder;
+        @Autowired
+        private JwtDecoder jwtDecoder;
+        @Autowired
+        private SecurityProperties properties;
+
+        @Test
+        void generateTokenWhenCorrectLoginThenGetToken() {
+            SecurityService securityService = new SecurityServiceImpl(
+                    properties, serverService, passwordEncoder, jwtEncoder);
+            server.setPassword(passwordEncoder.encode(password));
+            when(serverService.getById(uuid)).thenReturn(server);
+            String jwt = securityService.generateToken(uuid, password).getTokenValue();
+            assertThatCode(() -> jwtDecoder.decode(jwt)).doesNotThrowAnyException();
+            assertThat(jwtDecoder.decode(jwt).getClaims().get("sub")).isEqualTo(host);
+        }
+    }
+
+    @Nested
+    @ContextConfiguration(classes = SecurityConfiguration.class)
+    @TestPropertySource(properties = "ru.job4j.urlshortcut.security.algorithm=hs384")
+    public class SecurityServiceImplWithHs384AlgorithmTest {
+
+        @Autowired
+        private PasswordEncoder passwordEncoder;
+        @Autowired
+        private JwtEncoder jwtEncoder;
+        @Autowired
+        private JwtDecoder jwtDecoder;
+        @Autowired
+        private SecurityProperties properties;
+
+        @Test
+        void generateTokenWhenCorrectLoginThenGetToken() {
+            SecurityService securityService = new SecurityServiceImpl(
+                    properties, serverService, passwordEncoder, jwtEncoder);
+            server.setPassword(passwordEncoder.encode(password));
+            when(serverService.getById(uuid)).thenReturn(server);
+            String jwt = securityService.generateToken(uuid, password).getTokenValue();
+            assertThatCode(() -> jwtDecoder.decode(jwt)).doesNotThrowAnyException();
+            assertThat(jwtDecoder.decode(jwt).getClaims().get("sub")).isEqualTo(host);
+        }
+    }
+
+    @Nested
+    @ContextConfiguration(classes = SecurityConfiguration.class)
+    @TestPropertySource(properties = "ru.job4j.urlshortcut.security.algorithm=hs512")
+    public class SecurityServiceImplWithHs512AlgorithmTest {
+
+        @Autowired
+        private PasswordEncoder passwordEncoder;
+        @Autowired
+        private JwtEncoder jwtEncoder;
+        @Autowired
+        private JwtDecoder jwtDecoder;
+        @Autowired
+        private SecurityProperties properties;
+
+        @Test
+        void generateTokenWhenCorrectLoginThenGetToken() {
+            SecurityService securityService = new SecurityServiceImpl(
+                    properties, serverService, passwordEncoder, jwtEncoder);
+            server.setPassword(passwordEncoder.encode(password));
+            when(serverService.getById(uuid)).thenReturn(server);
+            String jwt = securityService.generateToken(uuid, password).getTokenValue();
+            assertThatCode(() -> jwtDecoder.decode(jwt)).doesNotThrowAnyException();
+            assertThat(jwtDecoder.decode(jwt).getClaims().get("sub")).isEqualTo(host);
+        }
     }
 }
