@@ -14,7 +14,7 @@ public class SecurityProperties {
     /** Signing HMAC algorithm. */
     private MacAlgorithm algorithm = MacAlgorithm.HS256;
 
-    /** Secret key to sign tokens. Key size in bits should match algorithm requirements. */
+    /** Secret key to sign tokens. Key minimal size in bits should match algorithm requirements. */
     private String secret = "01234567".repeat(8);
 
     /** Token expiration time (in seconds). */

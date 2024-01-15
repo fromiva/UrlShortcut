@@ -1,6 +1,10 @@
 spring:
   config.name: Job4J URL Shortcut
   profiles.default: dev
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/url_shortcut
+    username: postgres
+    password: password
   liquibase:
     contexts: ${spring.profiles.active}
     change-log: classpath:/db/changelog/000-changelog-main.yaml
