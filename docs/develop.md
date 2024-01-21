@@ -41,6 +41,17 @@ by signing generated JWT with a single symmetric key.
 The application issues tokens to access to its own endpoints only.
 Dedicated or third party authentication/authorization server is not required or assumed.
 
+## Redirection log mechanism
+
+The redirection log is implemented as a user-defined function (for PostgreSQL DBMS only),
+that creates a log record in the special database table and retrieves specified URL entity.
+This function is called from the dedicated Spring Data JPA URL repository each time
+when a redirection request occurs.
+There is a similar stub function for H2 DBMS, that only retrieves an entity without logging.
+
+Numbers of redirections are calculated by special count function
+that sums a number of log records with a specified URL ID.
+
 ## Application profiles
 
 The application has the following Spring Boot, Maven and Liquibase profiles/contexts:
@@ -66,6 +77,6 @@ and it performs migration automatically if needed when each time the application
 There are two dedicated application profiles to unit testing and quality assurance:
 `test` and `qa` accordingly.
 
-Besides the JUnit and Mokito testing libraries, the dedicated Spring Framework,
+Besides the JUnit and Mokito testing libraries, the specialized Spring Framework,
 Spring Boot, Spring Data and Spring Security utilities and annotations are used.
 JaCoCo is used as a code coverage toolkit.

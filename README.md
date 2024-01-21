@@ -29,6 +29,15 @@ The application is distributed under the Creative Commons CC0 1.0 Universal Lice
 Bundled dependencies are distributed under its own open licenses, please explore
 the corresponding original documentation.
 
+## Documentation
+
+In addition to this `README` file there is a number of special documentation
+files in the  [docs](./docs) folder:
+
+- [openapi.yaml](./docs/openapi.yaml): full OpenAPI specification for all the application endpoints
+- [TSL.md](./docs/TSL.md): instructions to configure the SSL/TSL encryption
+- [develop.md](./docs/develop.md): special notes for developers
+
 ## System requirements
 
 To run the application, the following preinstalled components are required: 
